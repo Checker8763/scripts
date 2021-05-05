@@ -2,15 +2,13 @@
 
 ## docker_volume
  Commandline utilty that can backup and restore docker volumes
- - Needs access to docker
- - Creates the tarball in the current directory
+ - Depends on docker access
  
 ## minecraft_server
- Start stop and restart scripts
- - Depends on screen and jq
+ Start stop and restart scripts for minecraft servers
+ - Depends on screen, jq and java
  
 ## paper_mc
- Commandline utilty to download a papermc jar
- - Depends on jq
- - Downloads to current directory
+ Commandline utilty to get a papermc versions
+ - Depends on jq and curl
  
