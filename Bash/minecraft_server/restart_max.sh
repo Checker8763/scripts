@@ -4,19 +4,20 @@
 # ----------
 Filename="spigot-1.16.5.jar"
 Ram=3G
-Args="-Xms$Ram -Xmx$Ram"
-Params="nogui"
-StartCmd="java $Args -jar $Filename $Params"
+Flags="-Xms$Ram -Xmx$Ram"
+Args="nogui"
+StartCmd="java $Flags -jar $Filename $Args"
 MaxRestarts=3
+SleepTime=5m
 # ----------
 
 echo Filename: $Filename
+echo Flags: $Flags
 echo Args: $Args
-echo Params: $Params
 echo StartCmd: $StartCmd
 
 # VARIABLES
-EchoedStop=false
+Stopped=false
 CurrentRestart=0
 
 echo Starting
@@ -28,11 +29,11 @@ while [ $Code -eq 0 ] && [ $CurrentRestart -le $MaxRestarts ]
 do
     if [ -f STOP ] # If File STOP exist
     then
-        [ ! EchoedStop ] && \
+        [ ! Stopped ] && \
 			echo Not starting due to STOP file being set.
-		EchoedStop=true
+		Stopped=true
     else
-		EchoedStop=false
+		Stopped=false
         echo Code: $Code
         echo Restarting
         $StartCmd
@@ -40,7 +41,7 @@ do
 		# https://linuxhint.com/increment-a-variable-in-bash/
         ((++CurrentRestart))
     fi
-    sleep 5
+    sleep $SleepTime
 done
 
 
