@@ -1,26 +1,26 @@
-Filename="paper-231.jar"
-Args="-Xms2G -Xmx2G"
-Params="nogui"
-StartCmd="java $Args -jar $Filename $Params"
+Filename="spigot-1.16.5.jar"
+Folder="."
+Ram=3G
+Flags="-Xms$Ram -Xmx$Ram"
+Args="nogui"
+StartCmd="java $Flags -jar $Filename $Args"
 
 echo Filename: $Filename
+echo Folder: $Folder
+echo Flags: $Flags
 echo Args: $Args
-echo Params: $Params
 echo StartCmd: $StartCmd
 
-echo Starting
-$StartCmd
-Code=$?
+Code=0
 
-# Restart while no crash and no STOP file exists
-while [ $Code -eq 0 ] && [ ! -f STOP ]
+cd $Folder
+
+# Restart while no crash
+while [ $Code -eq 0 ]
 do
-echo Code: $Code
-echo Restarting
+echo "(Re)starting"
 $StartCmd
 Code=$?
 done
 
-[ -f STOP ] && echo STOP file exists!
-
-[ ! $Code -eq 0 ] && echo Server crashed!
+echo Server crashed!
