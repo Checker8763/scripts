@@ -3,50 +3,52 @@
 # CONFIG
 # ----------
 Filename="spigot-1.16.5.jar"
+Folder="."
 Ram=3G
 Flags="-Xms$Ram -Xmx$Ram"
 Args="nogui"
 StartCmd="java $Flags -jar $Filename $Args"
 MaxRestarts=3
+StopFilePath=STOP
 SleepTime=5m
 # ----------
 
 echo Filename: $Filename
+echo Folder: $Folder
 echo Flags: $Flags
 echo Args: $Args
 echo StartCmd: $StartCmd
+echo StopFile: $Folder/$StopFilePath
 
 # VARIABLES
-Stopped=false
+EchoedStop=false
 CurrentRestart=0
 
-echo Starting
-$StartCmd
-Code=$?
+# Change to folder
+cd $Folder
 
 # Restart while no crash and no STOP file exists
-while [ $Code -eq 0 ] && [ $CurrentRestart -le $MaxRestarts ]
+while [ $CurrentRestart -le $MaxRestarts ]
 do
-    if [ -f STOP ] # If File STOP exist
+    if [ -f $StopFilePath ] 
     then
-        [ ! Stopped ] && \
-			echo Not starting due to STOP file being set.
-		Stopped=true
+        [ ! $EchoedStop = true ] && \
+			echo Not starting due to STOP file being set. && \
+            EchoedStop=true
     else
-		Stopped=false
-        echo Code: $Code
-        echo Restarting
+		EchoedStop=false
+        echo "(Re)starting"
+        echo "(Re)start: $CurrentRestart"
         $StartCmd
         Code=$?
 		# https://linuxhint.com/increment-a-variable-in-bash/
-        ((++CurrentRestart))
+        ((++CurrentRestart));
+        # Straight restart when crashed
+        [ ! $Code -eq 0 ] && \
+            echo "Server crashed!" && \
+            continue
     fi
     sleep $SleepTime
 done
 
-
-[ -f STOP ] && echo STOP file exists!
-
-[ $CurrentRestart -le $MaxRestarts ] && echo MaxRestarts reached!
-
-[ ! $Code -eq 0 ] && echo Server crashed!
+[ ! $CurrentRestart -le $MaxRestarts ] && echo MaxRestarts reached! 
