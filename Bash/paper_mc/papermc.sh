@@ -8,7 +8,7 @@ BASE_URL="https://papermc.io/api/v2/projects/paper"
 
 URL=$BASE_URL
 
-CURL_CMD=`curl -s -X GET $URL -H  "accept: application/json"`
+CURL_CMD=$(curl -s -X GET $BASE_URL -H "accept: application/json")
 
 PAPER_INFO=$CURL_CMD
 
@@ -18,68 +18,104 @@ PAPER_INFO=$CURL_CMD
 
 # TODO: check if curl and jq are installed
 
-if [ -z $PAPER_INFO  ]    # if LATEST_BUILD empty
-then
+if [ -z $PAPER_INFO ]; then # if LATEST_BUILD empty
     echo "No Internet connection!"
     exit 1
 fi
-
-
 
 # -----
 #  Functions
 # -----
 
-get_versions() {
-    echo $PAPER_INFO | jq  .versions
-    echo "latest for latest version"
-    exit 0
+fetch_json() {
+    # fetches json from url
+    # $1 url
+
+    if [ ! $1 ]; then
+        echo [fetch_json ]: Not enough arguments
+        exit 1
+    fi
+
+    curl -s -X GET $1 -H 'accept: application/json'
 }
 
-print_help () {
-    echo "Usage: papermc COMMAND ARGS"
-    echo "COMMANDs:"
-    echo "help: this command"
-    echo "versions: gets every available version"
-    echo "get {version} {build}: downloads specific version"
-    echo "  version can be latest"
-    exit 0
+parse_json() {
+    # returns json output for the selector in the input
+    # $1 selector
+    # $2 input (make f***ing sure to put quotes around it)
+    if [ ! $1 ] && [ ! $2 ]; then
+        echo [parse_json]: Not enough arguments
+        exit 1
+    fi
+
+    echo $2 | jq -r $1
+}
+
+get_version_groups() {
+    #prints every version_group
+    parse_json .version_groups $PAPER_INFO
+}
+
+get_versions() {
+    if [ $1 ]; then
+        URL=$URL/version_group/$1
+
+        JSON=$(fetch_json $URL)
+        SOURCE=$JSON
+    else
+        SOURCE=$PAPER_INFO
+    fi
+
+    VERSIONS=$(parse_json .versions $SOURCE)
+
+    if [ "$VERSIONS" = null ]; then
+        parse_json .error "$JSON"
+    else
+        parse_json .versions "$SOURCE"
+    fi
+}
+
+get_builds() {
+    URL=$URL/versions/$1
+
+    JSON=$(fetch_json $URL)
+
+    parse_json .builds $JSON
 }
 
 download_version() {
+    # downloads build of a version
     # $1 version
     # $2 build
-    if [ $1 = "latest" ]
-    then
-        VERSION=$(curl -s -X GET $BASE_URL -H  "accept: application/json" | jq --raw-output .versions[-1])
+    if [ $1 = "latest" ]; then
+        VERSION=$(parse_json .versions[-1] $PAPER_INFO)
     else
         VERSION=$1
     fi
-    
+
     URL=$BASE_URL/versions/$VERSION
 
-    
-    if [ -z $2 ] #If no BUILD is supplied: get latest
-    then
-        BUILD=$(curl -s -X GET $URL -H  "accept: application/json" | jq --raw-output .builds[-1])
+    if [ -z $2 ]; then #If no BUILD is supplied: get latest
+        JSON=$(fetch_json $URL)
+        BUILD=$(parse_json .builds[-1] "$JSON")
     else
         BUILD=$2
     fi
-    
+
     URL=$URL/builds/$BUILD
+    JSON=$(fetch_json $URL)
 
-    
-    DOWNLOAD_NAME=$(curl -s -X GET $URL -H  "accept: application/json" | jq --raw-output .downloads.application.name)
+    DOWNLOAD_NAME=$(parse_json .downloads.application.name "$JSON")
 
-    if [ $DOWNLOAD_NAME = "null"  ]
-    then
-        echo "Couldn't find a download for the specified version ($VERSION) and build ($BUILD)."
-        echo "Run 'versions' command to see available versions."
+    if [ $DOWNLOAD_NAME = "null" ]; then
+        echo "Couldn't find a download!"
+        echo "Version: $VERSION"
+        echo "Build: $BUILD"
+        echo "Use 'versions' command to see available versions."
         exit 1
     fi
 
     URL=$URL/downloads/$DOWNLOAD_NAME
-
 
     echo VERSION: $VERSION
     echo BUILD: $BUILD
@@ -89,31 +125,44 @@ download_version() {
     echo Downloading...
     curl -s -o $DOWNLOAD_NAME $URL
     echo DONE!
+}
 
+print_help() {
+    echo "Usage: papermc COMMAND ARGS"
+    echo
+    echo "COMMANDs:"
+    echo "help: this command"
+    echo "version_groups: prints every version_group"
+    echo "versions {version_group}: prints every available version"
+    echo "builds {version}: prints every build for a specific version"
+    echo "get {version/latest} {build}: downloads specific version"
+    exit 0
 }
 
 case $1 in
-    "versions" )
-        get_versions
-    ;;
-    
-    "help" )
-        print_help
+
+"version_groups")
+    get_version_groups
     ;;
 
-    "get" )
-        
-        if [ -z $2 ]
-        then
-            echo "No version supplied!"
-            exit 1
-        fi
-
-        download_version $2 $3
-        
+"versions")
+    get_versions $2
     ;;
 
-    *) # This catches all cases that weren't previously listed. That's why it has the wildcard "*" operator.
-        print_help
+"builds")
+    get_builds $2
+    ;;
+
+"get")
+    if [ -z $2 ]; then
+        echo "No version supplied!"
+        exit 1
+    fi
+
+    download_version $2 $3
+    ;;
+
+*)
+    print_help
     ;;
 esac
