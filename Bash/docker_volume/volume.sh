@@ -41,8 +41,13 @@ case $1 in
     backup_compressed $2
     ;;
 
-"populate")
+"restore")
+    check_volume $2
     populate $2 $3
+    ;;
+
+"check")
+    check_volume $2
     ;;
 
 *)
