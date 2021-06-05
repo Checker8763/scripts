@@ -13,8 +13,9 @@ backup_compressed() {
     # $1 volume_name
     docker run --rm \
         -v $1:/volume \
-        -v $(pwd):/backup busybox:stable \
+        -v $(pwd):/backup \
         --name backup_$1 \
+        busybox:stable \
         tar czf /backup/$1_backup.tar.gz -C /volume .
 }
 
@@ -25,7 +26,8 @@ populate() {
         -v $1:/volume \
         -v $(pwd):/backup \
         --name populate_$1 \
-        busybox:stable tar xaf /backup/$2 -C /volume
+        busybox:stable \
+        tar xaf /backup/$2 -C /volume
 }
 
 check_volume() {
