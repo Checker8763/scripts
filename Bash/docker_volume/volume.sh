@@ -31,7 +31,7 @@ populate() {
 }
 
 check_volume() {
-    if [ ! $(docker volume ls | grep -o $1) = $1 ]; then
+    if [ ! "$(docker volume ls | grep -o $1)" = "$1" ]; then
         echo No Volume found matching: $1
         exit 1
     fi
