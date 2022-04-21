@@ -131,10 +131,10 @@ download_version() {
 
     URL=$URL/downloads/$DOWNLOAD_NAME
 
-    echo VERSION: $VERSION
-    echo BUILD: $BUILD
-    echo DOWNLOAD_NAME: $DOWNLOAD_NAME
-    echo DOWNLOAD_URL: $URL
+    echo VERSION: $VERSION             > papermc_info.txt
+    echo BUILD: $BUILD                 > papermc_info.txt
+    echo DOWNLOAD_NAME: $DOWNLOAD_NAME > papermc_info.txt
+    echo DOWNLOAD_URL: $URL            > papermc_info.txt
 
     echo Downloading...
     curl -s -o $DOWNLOAD_NAME $URL
