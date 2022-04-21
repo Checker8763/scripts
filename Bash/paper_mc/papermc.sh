@@ -16,11 +16,25 @@ PAPER_INFO=$CURL_CMD
 # Initial checks
 # -----
 
-# TODO: check if curl and jq are installed
+exit_error() {
+    echo $1
+    exit 1
+}
+
+jq_help=$(jq --help)
+
+if [ $? -ne 0 ]; then # jq not installed
+    exit_error "jq not installed!"
+fi
+
+jq_help=$(curl --help)
+
+if [ $? -ne 0 ]; then # curl not installed
+    exit_error "curl not installed!"
+fi
 
 if [ -z $PAPER_INFO ]; then # if LATEST_BUILD empty
-    echo "No Internet connection!"
-    exit 1
+    exit_error "No Internet connection!"
 fi
 
 # -----
